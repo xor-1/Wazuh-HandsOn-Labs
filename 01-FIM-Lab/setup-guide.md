@@ -17,7 +17,7 @@ Simulate a real-world SOC scenario to detect unauthorized file modifications usi
 ## ⚙️ Step-by-Step Setup
 
 ### 1️⃣ Deploy Wazuh Manager
-1. Download Wazuh OVA from the [official Wazuh downloads page](https://wazuh.com/download/).
+1. Download Wazuh OVA from the [official Wazuh downloads page](https://documentation.wazuh.com/current/deployment-options/virtual-machine/virtual-machine.html).
 2. Import OVA into VMware Workstation.
 3. Verify Wazuh Manager is running:
 
