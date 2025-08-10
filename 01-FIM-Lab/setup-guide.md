@@ -1,4 +1,3 @@
-````markdown
 # File Integrity Monitoring (FIM) – Setup Guide
 
 ## 📌 Objective
@@ -14,7 +13,6 @@ Simulate a real-world SOC scenario to detect unauthorized file modifications usi
 | **Host Machine**   | Local PC (Windows 11, 16GB RAM, Intel i7) |
 | **Network**        | Host-Only Adapter for isolated communication |
 
----
 
 ## ⚙️ Step-by-Step Setup
 
@@ -27,7 +25,6 @@ Simulate a real-world SOC scenario to detect unauthorized file modifications usi
    sudo systemctl status wazuh-manager
    ```
 
----
 
 ### 2️⃣ Configure the Endpoint (Kali Linux)
 
@@ -76,7 +73,6 @@ password: admin
    sudo systemctl restart wazuh-manager
    ```
 
----
 
 ### 4️⃣ Testing & Verification
 
@@ -90,24 +86,21 @@ and add other some sample files, edit them and delete some.
 
 2. Check the Wazuh Dashboard → Security Events → File Integrity Monitoring.
 
----
 
 ## 📊 Outcome
 
-* Configured centralized Wazuh environment.
-* Enabled File Integrity Monitoring on a remote endpoint.
-* Successfully detected unauthorized file changes in a SOC-like setup.
+- Configured centralized Wazuh environment.
+- Enabled File Integrity Monitoring on a remote endpoint.
+- Successfully detected unauthorized file changes in a SOC-like setup.
 
----
 
 
 ## 🚀 Next Steps
 
-* Integrate with Wazuh rules for custom alerting.
-* Test on multiple endpoints (Windows & Linux).
-* Combine with host-based intrusion detection for broader coverage.
+- Integrate with Wazuh rules for custom alerting.
+- Test on multiple endpoints (Windows & Linux).
+- Combine with host-based intrusion detection for broader coverage.
 
----
 
 **Author:** Muhammad Faisal Farooq
 **Date:** 2025-08-10
