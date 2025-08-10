@@ -19,8 +19,8 @@ This document summarizes the key observations, insights, and learnings from the 
 ---
 
 ## 2️⃣ Testing Results
-| Test Action                        | Expected Result                          | Actual Result | Status |
-|------------------------------------|-------------------------------------------|--------------|--------|
+| Test Action                        | Expected Result                           | Actual Result | Status |
+|------------------------------------|-------------------------------------------|---------------|--------|
 | Create new file in `/root`         | Alert triggered in Wazuh dashboard        | ✅ Alerted   | Pass   |
 | Modify existing `/root`            | Alert triggered with "modified" status    | ✅ Alerted   | Pass   |
 | Delete monitored file in `/root`   | Alert triggered with "deleted" status     | ✅ Alerted   | Pass   |
