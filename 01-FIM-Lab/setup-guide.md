@@ -104,6 +104,3 @@ and add other some sample files, edit them and delete some.
 
 **Author:** Muhammad Faisal Farooq
 **Date:** 2025-08-10
-
-```
-```
