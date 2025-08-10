@@ -1,5 +1,4 @@
-```markdown
-# Findings – File Integrity Monitoring (FIM) Lab
+## Findings – File Integrity Monitoring (FIM) Lab
 
 ## 🔍 Overview
 This document summarizes the key observations, insights, and learnings from the File Integrity Monitoring (FIM) lab performed using Wazuh SIEM in a simulated SOC environment.
@@ -46,4 +45,3 @@ This document summarizes the key observations, insights, and learnings from the 
 
 #Author: Muhammad Faisal Farooq  
 #Date: 2025-08-10
-```
