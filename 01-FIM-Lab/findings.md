@@ -10,7 +10,7 @@ This document summarizes the key observations, insights, and learnings from the 
   The Wazuh Manager successfully collected logs from the Kali Linux endpoint over a host-only network without exposing the monitored system directly.
   
 - FIM Detected All Modifications:  
-  Any addition, deletion, or modification to files within `/etc` and `/var/www` triggered alerts in the Wazuh dashboard.
+  Any addition, deletion, or modification to files within `/root` triggered alerts in the Wazuh dashboard.
 
 - Timestamp & User Context Provided:  
   Each alert contained file path, event type, timestamp, and the user responsible — essential details for SOC triage.
