@@ -1,226 +1,222 @@
 # Lab 02 – pfSense Integration with Wazuh
+<p style="text-align:center;">
+<img width="981" height="463" alt="image" src="https://github.com/user-attachments/assets/746ac74d-87cb-432e-9018-87b789cb44e0" />
+</p>
 
-**Author:** Muhammad Faisal Farooq
-**Position:** SOC Intern – ITSOLERA Pvt. Ltd.
-**Date:** *15 August 2025*
-**Source:** ITSOLERA Internship Tasks
+## Introduction
 
----
-
-## Objective
-
-The objective of this lab is to integrate pfSense with Wazuh to achieve centralized network visibility, monitoring, and alerting.
-This includes configuring pfSense to forward logs to Wazuh and enabling additional network security services such as Suricata, pfBlockerNG, and Squid with ClamAV.
-The final goal is to detect, analyze, and document security events generated from the firewall, IDS/IPS, and proxy.
+This lab covers the integration of a **pfSense firewall** with the **Wazuh SIEM** to enhance network security and monitoring.
+pfSense is configured with **pfBlockerNG** to block specific websites and countries, while **Wazuh** collects and analyzes firewall logs in real time for visibility and alerting.
+This setup simulates a practical security environment for traffic control and incident detection.
 
 ---
 
-## Lab Environment
+## What is Wazuh?
 
-* pfSense Firewall – 2 vCPU, 4 GB RAM
-* Wazuh Manager (OVA) – 4 vCPU, 8 GB RAM
-* Kali Linux (Test Client) – 2 vCPU, 2 GB RAM
-* VMware Workstation – Virtualization Platform
-* LAN Network: 192.168.10.0/24
-* pfSense LAN Gateway: 192.168.10.1
-* Wazuh Manager IP: 192.168.10.5
-* Kali Test Machine IP: 192.168.10.10
+**Wazuh** is an open-source security platform that helps detect threats, monitor system integrity, and ensure compliance with regulations.
+It acts as a **Security Information and Event Management (SIEM)** tool by collecting, parsing, and analyzing data from endpoints and cloud environments.
 
----
+It consists of the following main components:
 
-## Network Diagram
-
-Internet → pfSense (Suricata, pfBlockerNG, Squid + ClamAV) → LAN Network → [Kali Test Client] → [Wazuh Manager]
+* **Wazuh Manager** – Collects and analyzes data from agents.
+* **Wazuh Agent** – Installed on monitored endpoints.
+* **Elastic Stack** – Used to visualize and analyze data (includes Elasticsearch, Logstash, and Kibana).
 
 ---
 
-## Step-by-Step Setup
+## What is pfSense?
 
-### 1. Deploy pfSense
+**pfSense** is an open-source firewall and router platform based on **FreeBSD**.
+It provides enterprise-grade features such as stateful packet filtering, VPN support, intrusion detection/prevention, and traffic shaping — all managed through an easy-to-use web interface.
 
-* Download pfSense ISO from official website.
-* Create a VM with two network adapters (WAN and LAN).
-* Install pfSense and assign static LAN IP 192.168.10.1/24.
-* Access pfSense via browser at `https://192.168.10.1` and log in as `admin / pfsense`.
-* Verify both WAN and LAN interfaces are active.
-
-### 2. Deploy Wazuh OVA
-
-* Import the official Wazuh OVA in VMware.
-* Start the VM and check the assigned IP address.
-* Access the Wazuh dashboard at `https://<WAZUH_IP>`.
-* Confirm that Wazuh Manager, Indexer, and Dashboard services are active.
-
-### 3. Configure Remote Syslog (pfSense → Wazuh)
-
-* In pfSense, go to `Status > System Logs > Settings > Remote Logging Options`.
-* Add the Wazuh IP address and select UDP port 514.
-* Enable remote logging for Firewall, System, Suricata, and Proxy logs.
-* Save and apply the settings.
-* On Wazuh, confirm receipt of logs using:
-
-  ```
-  sudo tcpdump -n -i any port 514
-  ```
-
-  Logs should appear as syslog traffic from pfSense.
-
-### 4. Install and Configure Suricata
-
-* Open pfSense and navigate to `System > Package Manager > Available Packages`.
-* Install Suricata and enable it on the LAN interface.
-* Enable EVE JSON output for structured logging.
-* Select rule sources such as EmergingThreats Open.
-* Start Suricata service and verify that alerts are generated.
-
-### 5. Install and Configure pfBlockerNG
-
-* Install pfBlockerNG-devel from Package Manager.
-* Enable GeoIP blocking and select threat intelligence feeds such as Abuse.ch or FireHOL.
-* Apply the configuration and verify blocked IPs in the Firewall logs.
-
-### 6. Install Squid and ClamAV
-
-* Install Squid Proxy Server and enable Transparent Proxy mode for LAN.
-* Install and enable ClamAV for malware scanning within Squid.
-* Enable logging for both access and antivirus events.
-* Optionally configure HTTPS inspection for deeper scanning (optional for lab).
-
-### 7. Configure Wazuh Decoders and Rules
-
-* Create a local decoder file:
-
-  ```
-  /var/ossec/etc/decoders/local_decoder_pfsense.xml
-  ```
-
-  Example content:
-
-  ```xml
-  <decoders>
-    <decoder name="pfsense-firewall">
-      <program_name>filterlog</program_name>
-    </decoder>
-    <decoder name="suricata-alert">
-      <program_name>suricata</program_name>
-    </decoder>
-    <decoder name="squid-proxy">
-      <program_name>squid</program_name>
-    </decoder>
-  </decoders>
-  ```
-
-* Add custom rules:
-
-  ```
-  /var/ossec/etc/rules/local_rules.xml
-  ```
-
-  Example:
-
-  ```xml
-  <group name="pfSense,">
-    <rule id="100100" level="8">
-      <decoded_as>pfsense-firewall</decoded_as>
-      <description>pfSense: Firewall Block Event Detected</description>
-    </rule>
-    <rule id="100200" level="10">
-      <decoded_as>suricata-alert</decoded_as>
-      <description>Suricata Alert Detected on pfSense</description>
-    </rule>
-    <rule id="100300" level="12">
-      <decoded_as>squid-proxy</decoded_as>
-      <description>Squid Proxy (ClamAV) – Malware Blocked</description>
-    </rule>
-  </group>
-  ```
-
-* Restart Wazuh Manager:
-
-  ```
-  sudo systemctl restart wazuh-manager
-  ```
-
-### 8. Test the Setup (EICAR Simulation)
-
-* From Kali, execute:
-
-  ```
-  wget http://www.eicar.org/download/eicar.com
-  ```
-* Expected behavior:
-
-  * SquidClamAV blocks the file.
-  * Suricata generates a detection alert.
-  * Wazuh shows a correlated alert event in the dashboard.
+pfSense can be deployed on both physical hardware and virtual machines, making it ideal for home, business, and lab environments.
+Its modular design allows extensions through packages like **pfBlockerNG** for advanced content filtering and **GeoIP-based blocking**.
 
 ---
 
-## Verification Results
+## Installing Wazuh OVA in VMware
+<p style="text-align:center">
+<img width="666" height="450" alt="image" src="https://github.com/user-attachments/assets/e5159744-3e46-431d-8f9b-c6dd45bbbb05" />
+</p>
 
-| Test Description             | Expected Output                    | Result |
-| ---------------------------- | ---------------------------------- | ------ |
-| pfSense logs appear in Wazuh | Firewall logs visible in dashboard | Passed |
-| Suricata alerts received     | IDS alerts parsed correctly        | Passed |
-| pfBlockerNG blocks IP        | Log entry forwarded to Wazuh       | Passed |
-| EICAR download blocked       | Alert generated in Wazuh           | Passed |
+To begin, download and install the official **Wazuh OVA (Open Virtual Appliance)** file in VMware Workstation.
 
----
+### Steps:
 
-## Observations
+1. Downloaded the Wazuh OVA from the official Wazuh website.
+2. Opened **VMware Workstation** and selected **“Open a Virtual Machine”**.
+3. Imported the OVA and adjusted settings (RAM, CPU as needed).
+4. Started the VM and waited for Wazuh to boot up.
 
-* Syslog forwarding was initially blocked due to firewall rule restrictions. Allowing UDP 514 resolved the issue.
-* Suricata on LAN produced cleaner, relevant alerts compared to WAN deployment.
-* pfBlockerNG added external threat intelligence capability.
-* ClamAV successfully intercepted and logged EICAR test download attempts.
-* Custom Wazuh decoders allowed structured and categorized alerting.
+<img width="670" height="572" alt="image" src="https://github.com/user-attachments/assets/eaca83cd-10f4-4179-898f-422fc8c902c2" />
+
 
 ---
 
-## Challenges
+## Starting Up the Wazuh Server
 
-* Required manual decoder adjustments for pfSense log format.
-* SSL inspection in Squid required manual CA import into the browser.
-* Initial syslog traffic not reaching Wazuh until proper firewall rule added.
+<img width="675" height="387" alt="image" src="https://github.com/user-attachments/assets/594fefcd-068e-4c05-8b8a-859c278ea769" />
 
----
 
-## Lessons Learned
+Once the virtual machine was up:
 
-* Centralizing pfSense logs into Wazuh significantly enhances SOC visibility.
-* IDS, proxy, and firewall integration provide layered detection capability.
-* Proper decoder and rule customization are essential for accurate alerting.
-* SSL inspection introduces complexity but increases coverage.
+* Logged in with default credentials:
 
----
+  * **Username:** `wazuh-user`
+  * **Password:** `wazuh`
+* Verified that all services were running (`wazuh-manager`, `dashboard`, `indexer`, etc.).
+* Accessed the Wazuh dashboard through the browser using the IP assigned to the VM.
+* The IP can be found using commands:
 
-## SOC Relevance
-
-* pfSense provides perimeter visibility.
-* Suricata contributes intrusion detection at network level.
-* Squid and ClamAV offer web-layer malware control.
-* Wazuh unifies all logs for correlation, detection, and incident response.
-
-This lab demonstrates the foundation of a real SOC environment, combining multiple network and host data sources for correlation.
+  ```
+  ip a
+  ip address
+  ifconfig
+  ```
+<img width="1124" height="321" alt="image" src="https://github.com/user-attachments/assets/9f6e9df8-d87b-4446-b69d-d12b405364a1" />
 
 ---
 
-## Recommendations
+## Accessing the Wazuh Dashboard
 
-* Integrate VirusTotal for automatic hash lookups in Wazuh.
-* Automate IOC updates between Wazuh and pfBlockerNG.
-* Build dashboards in Kibana for network-level visibility.
-* Implement automated blocking playbooks for high-confidence events.
+<img width="713" height="397" alt="image" src="https://github.com/user-attachments/assets/39c08ad6-225b-48c8-866d-4bb63c47c4de" />
+
+
+* Opened a browser and entered:
+
+  ```
+  https://<Wazuh_VM_IP>
+  ```
+* Logged into the Wazuh dashboard.
+* Navigated through dashboards, rules, alerts, and logs in the **Wazuh App**.
+
+---
+
+## Configuring pfSense
+
+<img width="779" height="450" alt="image" src="https://github.com/user-attachments/assets/966d81ef-a056-4cee-a38a-b80e20ce0b3c" />
+
+
+1. Download the latest NetGate installer from [https://www.pfsense.org/download/](https://www.pfsense.org/download/).
+2. Import it into VMware and install the pfSense Firewall.
+3. Carefully assign virtual network interfaces:
+
+   * **WAN adapter:** connected to the Internet
+   * **LAN adapter:** connected to internal hosts (Kali endpoint and Wazuh SIEM)
+4. Access pfSense through its LAN IP address in a browser and log in using default credentials:
+
+   * **Username:** `admin`
+   * **Password:** `pfsense`
+5. Verify that both WAN and LAN are correctly configured and operational.
+
+<img width="929" height="431" alt="image" src="https://github.com/user-attachments/assets/64c5c915-7dfa-4a18-847e-042700ca955d" />
+<img width="871" height="565" alt="image" src="https://github.com/user-attachments/assets/1f8c97f7-3ac1-4bc8-9c07-496415c62a47" />
+
+
+---
+
+## Installing pfBlockerNG
+
+* Navigate to **System > Package Manager > Available Packages**.
+* Search for **pfBlockerNG** and install it.
+* After installation, configure pfBlockerNG according to network requirements — allowing or blocking specific countries, websites, or IP feeds.
+
+<img width="1050" height="667" alt="image" src="https://github.com/user-attachments/assets/ae535bcf-fd65-45a7-b425-dfdb52b2a132" />
+
+---
+
+## Firewall Configuration
+
+<img width="1056" height="210" alt="image" src="https://github.com/user-attachments/assets/67ae882c-aa5d-488d-82fa-22ae0ef9e233" />
+
+* Assign **WAN** as the outgoing traffic interface.
+* Assign **LAN** as the incoming traffic interface.
+* Enable **Remote Logging Options** to forward logs from pfSense to the Wazuh SIEM for analysis and monitoring.
+
+<img width="1052" height="138" alt="image" src="https://github.com/user-attachments/assets/e95d38ff-6be4-45f5-a029-0e56031be6a9" />
+<img width="1000" height="632" alt="image" src="https://github.com/user-attachments/assets/dd3b9b16-de6d-4663-926c-631d6c265d9f" />
+
+---
+
+## Configuring Wazuh Dashboard
+
+<img width="261" height="337" alt="image" src="https://github.com/user-attachments/assets/e25c111d-4716-46a2-8cf5-2993aefb4c3b" />
+
+1. Go to the **Wazuh Dashboard** and click on **Server Management**.
+2. Open **Settings** and edit configurations to integrate pfSense with Wazuh.
+
+<img width="1056" height="171" alt="image" src="https://github.com/user-attachments/assets/577ff670-ec68-4674-90de-046597430192" />
+<img width="732" height="226" alt="image" src="https://github.com/user-attachments/assets/9ab948f5-064b-48f5-8c12-f15e78c76f92" />
+
+---
+
+## Adding a Decoder for pfSense
+
+<img width="414" height="519" alt="image" src="https://github.com/user-attachments/assets/b8ca4b36-bf38-40d1-9d31-4efc8b23ba41" />
+<img width="973" height="140" alt="image" src="https://github.com/user-attachments/assets/ebd8f1ff-7131-4a63-b316-bfcd28995220" />
+
+
+**What is a Decoder?**
+In Wazuh, a *decoder* is a set of rules that define how raw log messages are interpreted and broken into structured fields.
+Decoders use patterns (regular expressions) to identify elements like IP addresses, ports, actions, or protocols so that Wazuh can apply rules, generate alerts, and store meaningful data.
+
+A custom decoder can be created to parse pfSense firewall logs into readable fields for better monitoring and analysis.
+
+---
+
+## Writing Wazuh Rules
+
+<img width="452" height="591" alt="image" src="https://github.com/user-attachments/assets/1ded05fd-6573-4123-b212-33b55713ff0a" />
+
+**What are Rules?**
+In Wazuh, *rules* are conditions that evaluate decoded log data to detect specific events or behaviors.
+Rules define which patterns, thresholds, or field values should trigger an alert and can assign severity levels, categories, and messages.
+
+For example:
+
+* A rule may alert when pfSense logs show blocked traffic from a restricted country.
+* Another rule may detect multiple failed login attempts or repeated access to blacklisted domains.
+
+Rules work together with decoders to transform raw logs into actionable security intelligence.
+
+---
+
+## Monitoring pfSense Logs in Wazuh
+
+Once the integration, decoders, and rules are configured, pfSense logs start appearing in Wazuh in real time.
+Firewall events such as blocked IPs, traffic anomalies, and access violations are displayed in the Wazuh dashboard under **Security Events**.
+
+---
+
+## Testing the Integration
+
+<img width="995" height="543" alt="image" src="https://github.com/user-attachments/assets/dd18d6ac-7b92-4b79-a858-b201ac23d50f" />
+
+To verify functionality:
+
+* Attempted an SSH login from an unauthorized external user to the internal network.
+* The attempt was blocked by pfSense, logged by the firewall, and detected by Wazuh as an alert.
+* Confirmed that the event appeared in the Wazuh dashboard with proper rule matching and severity classification.
 
 ---
 
 ## Conclusion
 
-The integration between pfSense and Wazuh was successfully completed.
-Firewall, IDS, and proxy logs were centralized into Wazuh and correlated effectively.
-All test scenarios, including the EICAR malware simulation, were successfully detected and logged.
-This lab demonstrates how network-level visibility and SIEM correlation form a complete SOC defense layer.
+The integration of **pfSense Firewall** with **Wazuh SIEM** provided a unified view of network traffic and security events, enabling real-time monitoring, correlation, and alerting.
+By centralizing firewall logs into Wazuh, visibility into malicious attempts, policy violations, and potential intrusions was significantly improved.
+
+This task strengthened the defensive posture of the environment and demonstrated the critical role of combining perimeter security with SIEM analytics.
+Through this implementation, I gained hands-on experience in:
+
+* Network defense
+* Log analysis
+* Rule and decoder management
+* SOC-driven threat detection workflows
+
+This lab represents an important step toward building expertise as a Blue Team cybersecurity professional.
 
 ---
 
-## **End of Lab 02 – pfSense Integration with Wazuh**
+**End of Lab 02 – pfSense Integration with Wazuh**
+
+---
