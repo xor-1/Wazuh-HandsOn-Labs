@@ -2,8 +2,8 @@
 
 **Author:** Muhammad Faisal Farooq
 **Position:** SOC Intern – ITSOLERA Pvt. Ltd.
-**Date:** *(Add date)*
-**Source:** ITSOLERA Internship Tasks Booklet
+**Date:** *15 August 2025*
+**Source:** ITSOLERA Internship Tasks
 
 ---
 
